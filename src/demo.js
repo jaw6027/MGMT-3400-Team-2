@@ -1,0 +1,9 @@
+// Fictional scenarios for learning the rubric. Never inserted into the team database.
+export const examples = [
+  { name: 'Warehouse break room', category: 'Warehouse & industrial', address: 'Illustrative western industrial area', lat: 34.679, lng: -118.198, dailyPeople: 150, dwellMinutes: 45, openHours: 16, service: 'none', power: 'yes', stage: 'Visit planned' },
+  { name: 'Neighborhood laundromat', category: 'Laundromat', address: 'Illustrative central Lancaster area', lat: 34.691, lng: -118.151, dailyPeople: 85, dwellMinutes: 60, openHours: 14, service: 'none', power: 'yes', stage: 'To research' },
+  { name: 'Auto repair waiting room', category: 'Auto service', address: 'Illustrative east Lancaster area', lat: 34.678, lng: -118.114, dailyPeople: 65, dwellMinutes: 60, openHours: 10, service: 'none', power: 'unknown', stage: 'To research' },
+  { name: 'Independent fitness studio', category: 'Fitness & recreation', address: 'Illustrative southwest Lancaster area', lat: 34.659, lng: -118.177, dailyPeople: 100, dwellMinutes: 60, openHours: 16, service: 'limited', power: 'yes', stage: 'Contacted' },
+  { name: 'Small office courtyard', category: 'Office', address: 'Illustrative downtown area', lat: 34.698, lng: -118.137, dailyPeople: 70, dwellMinutes: 30, openHours: 9, service: 'unknown', power: 'unknown', stage: 'To research' },
+  { name: 'Community activity center', category: 'Community & education', address: 'Illustrative northern Lancaster area', lat: 34.723, lng: -118.162, dailyPeople: null, dwellMinutes: null, openHours: null, service: 'unknown', power: 'unknown', stage: 'To research' },
+].map((place, index) => ({ ...place, id: `example-${index}`, contact: '', owner: '', evidence: 'Fictional training scenario. Audience, dwell time, service, and pin are illustrative; no actual business has been evaluated.', notes: '', starred: index < 2, source: { kind: 'example', label: 'Fictional training scenario' } }));
