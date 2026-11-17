@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stockroom · Team 2</title><link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="Stockroom home"><span class="brand-mark">▥</span> stockroom<span class="brand-dot">.</span></a>
+    <div class="workspace"><span class="avatar">T2</span><div><strong>Team 2</strong><small>Vending operations</small></div><span class="workspace-chevron">⌄</span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      <button class="nav-item active" data-view="overview"><span>▦</span> Overview</button>
+      <button class="nav-item" data-view="inventory"><span>▤</span> Inventory</button>
+      <button class="nav-item" data-view="alerts"><span>♧</span> Alerts <b id="nav-alerts">0</b></button>
+      <button class="nav-item" data-view="report"><span>▧</span> Restocking report</button>
+      <button class="nav-item" data-view="sales"><span>↗</span> Sales activity</button>
+    </nav>
+    <div class="sidebar-bottom"><span class="live-dot"></span> Local database connected<small>Small details. Better stocked.</small><div class="profile"><span class="avatar light">T2</span><div><strong>Team 2 workspace</strong><small>Sample fleet · 2 machines</small></div></div></div>
+  </aside>
+  <div class="main-wrap">
+    <header><div><span class="breadcrumb">Workspace</span><span class="slash">/</span><strong id="crumb">Overview</strong></div><div class="header-right"><span id="date-label"></span><span class="header-avatar">T2</span></div></header>
+    <main>
+      <div class="page-heading"><div><div class="eyebrow">YOUR FLEET, AT A GLANCE</div><h1 id="page-title">A little oversight. A lot less waste.</h1><p id="page-description">Keep your machines stocked, your products fresh, and your day moving.</p></div><button class="primary" id="record-sale"><span>＋</span> Record a sale</button></div>
+      <div id="load-error" role="alert" hidden></div>
+      <section class="stats" aria-label="Fleet summary" id="stats"></section>
+      <section id="overview-content"><div class="section-heading"><h2>Your machines <span class="count">02</span></h2><span class="muted">Two locations. One clear picture.</span></div><div id="machines" class="machine-grid"></div></section>
+      <section class="inventory-section">
+        <div class="section-heading"><div><h2 id="table-title">Inventory overview</h2><p id="table-subtitle">Every product, in the right place.</p></div><button class="secondary" id="export">↓ <span>Export restocking report</span></button></div>
+        <div class="panel"><div class="toolbar"><div class="filter-tabs" aria-label="Inventory status"><button class="selected" data-filter="all">All products</button><button data-filter="low">Low stock <span id="low-count"></span></button><button data-filter="expiring">Expiring soon <span id="expiry-count"></span></button></div><div class="search-tools"><input type="search" id="search" aria-label="Search products" placeholder="Search products…"><select id="machine-filter" aria-label="Filter by machine"><option value="all">All machines</option></select></div></div>
+          <div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div><div class="table-footer"><span id="row-count"></span><span>Inventory updates with every recorded sale <span class="live-dot"></span></span></div>
+        </div>
+      </section>
+      <footer><span><b>stockroom.</b> Made for a well-stocked day.</span><span>Team 2 · Vending inventory & expiration tracking</span></footer>
+    </main>
+  </div>
+  <dialog id="transaction-dialog"><form id="transaction-form"><div class="dialog-heading"><div><div class="eyebrow">INVENTORY UPDATE</div><h2 id="dialog-title">Record a sale</h2></div><button type="button" class="close" aria-label="Close dialog">×</button></div><p id="dialog-help">Sales automatically deduct from the selected machine’s inventory.</p><label>Product & machine<select id="product-select" required></select></label><label id="quantity-label">Quantity<input id="quantity" type="number" min="1" step="1" value="1" required></label><label id="expires-label" hidden>New expiration date<input id="expires" type="date"></label><p id="form-error" role="alert"></p><div class="dialog-actions"><button class="secondary close" type="button">Cancel</button><button class="primary" id="submit-transaction">Record sale</button></div></form></dialog>
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>
