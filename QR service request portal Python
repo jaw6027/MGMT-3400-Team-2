@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vending Machine Support</title>
+  <style>
+    body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; }
+    input, select, textarea, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+    button { background: #007bff; color: white; border: none; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Report an Issue</h2>
+  <!-- Replace the action URL with your Formspree or Google Apps Script endpoint -->
+  <form action="YOUR_FORM_ENDPOINT_URL" method="POST">
+    <label>Machine ID</label>
+    <input type="text" id="machine_id" name="machine_id" readonly>
+
+    <label>Issue Type</label>
+    <select name="issue" required>
+      <option value="Item Stuck">Item didn't drop / stuck</option>
+      <option value="Payment Issue">Card reader / cash issue</option>
+      <option value="Out of Stock">Item out of stock</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label>Details or Refund Info (Optional)</label>
+    <textarea name="details" rows="3" placeholder="Slot number, item name, or phone/email for a refund..."></textarea>
+
+    <button type="submit">Submit Request</button>
+  </form>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById('machine_id').value = params.get('machine') || 'Unknown';
+  </script>
+</body>
+</html>
+
