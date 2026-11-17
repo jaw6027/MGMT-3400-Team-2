@@ -1,0 +1,24 @@
+For your vending machine project, include these customer services:
+
+| Service | What the system should do |
+|---|---|
+| **Customer feedback** | Collect compliments, complaints, and suggestions linked to a machine ID. |
+| **Product requests** | Let customers suggest snacks or drinks and count repeated requests per machine. |
+| **Stuck-item reports** | Record the product, slot, amount paid, and what happened. Flag repeated dispensing problems. |
+| **Refund requests** | Collect payment details and the reason; let operators approve, decline, and record issued refunds. |
+| **Payment problem reports** | Report cash rejection, card-reader failures, duplicate charges, or incorrect prices. |
+| **Machine problem reports** | Report broken controls, refrigeration problems, damaged equipment, or an out-of-service machine. |
+| **Empty-slot or product-quality reports** | Report sold-out, expired, damaged, or spoiled products. |
+| **QR service access** | Give each machine a QR code that opens its service form with the machine ID selected. |
+| **Request tracking** | Immediately assign a request ID and **Received** status so customers can check progress. |
+| **Customer follow-up** | Collect an optional email or phone number so the operator can request details or explain the outcome. |
+
+The operator side also needs:
+
+- **Service queue:** Show priority, request ID, machine ID, location, problem, status, and next action.
+- **Status updates:** Support review, scheduled service, refund approval/issuance, resolution, and closure.
+- **Closure records:** Require the action taken, applicable refund or repair details, resolution date, and operator notes.
+- **Machine service history:** Keep closed requests available for each machine.
+- **Operator sign-in:** Protect customer contact details and restrict updates and closure to authorized operators.
+
+For the first version, prioritize **feedback, product requests, stuck-item/refund reports, machine QR codes, status tracking, and operator closure**.
