@@ -1,0 +1,225 @@
+import io
+import sqlite3
+from datetime import datetime
+from enum import Enum
+from typing import List, Optional
+
+import qrcode
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import HTMLResponse, StreamingResponse
+from pydantic import BaseModel
+
+app = FastAPI(title="Vending Machine Customer Service System")
+DB_NAME = "vending_support.db"
+
+# --- ENUMS FOR VALIDATION ---
+class RequestType(str, Enum):
+    FEEDBACK = "feedback"
+    PRODUCT_REQUEST = "product_request"
+    STUCK_ITEM_REFUND = "stuck_item_refund"
+
+class TicketStatus(str, Enum):
+    RECEIVED = "received"
+    IN_PROGRESS = "in_progress"
+    CLOSED = "closed"
+
+# --- PYDANTIC MODELS ---
+class TicketCreate(BaseModel):
+    machine_id: str
+    request_type: RequestType
+    customer_contact: Optional[str] = None
+    item_code_or_name: Optional[str] = None
+    details: str
+
+class TicketUpdate(BaseModel):
+    status: TicketStatus
+    operator_notes: Optional[str] = None
+
+class TicketResponse(BaseModel):
+    id: int
+    machine_id: str
+    request_type: str
+    customer_contact: Optional[str]
+    item_code_or_name: Optional[str]
+    details: str
+    status: str
+    operator_notes: Optional[str]
+    created_at: str
+    updated_at: str
+
+# --- DATABASE SETUP ---
+def init_db():
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                machine_id TEXT NOT NULL,
+                request_type TEXT NOT NULL,
+                customer_contact TEXT,
+                item_code_or_name TEXT,
+                details TEXT NOT NULL,
+                status TEXT NOT NULL,
+                operator_notes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+
+init_db()
+
+# --- FRONTEND 1: CUSTOMER MOBILE WEB FORM (QR DESTINATION) ---
+@app.get("/support", response_class=HTMLResponse)
+def customer_support_page(machine_id: str = Query("UNKNOWN", description="Machine ID from QR")):
+    return f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Vending Support - {machine_id}</title>
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #333; }}
+            .container {{ max-width: 450px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }}
+            h2 {{ margin-top: 0; color: #1a73e8; font-size: 22px; }}
+            .badge {{ display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 15px; }}
+            label {{ display: block; margin-top: 15px; font-weight: 600; font-size: 14px; }}
+            select, input, textarea {{ width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }}
+            button {{ width: 100%; background: #1a73e8; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; margin-top: 20px; cursor: pointer; }}
+            button:hover {{ background: #1557b0; }}
+            .hidden {{ display: none; }}
+            .success-box {{ background: #e6f4ea; color: #137333; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; display: none; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Machine Support</h2>
+            <div class="badge">Machine ID: {machine_id}</div>
+            
+            <form id="supportForm">
+                <input type="hidden" id="machine_id" value="{machine_id}">
+                
+                <label for="request_type">How can we help?</label>
+                <select id="request_type" onchange="toggleFields()" required>
+                    <option value="stuck_item_refund">Stuck Item / Request Refund</option>
+                    <option value="product_request">Request a New Snack/Drink</option>
+                    <option value="feedback">General Feedback / Issue</option>
+                </select>
+
+                <div id="item_field">
+                    <label for="item_code" id="item_label">Slot Number or Item Name (e.g., B4 or Snickers)</label>
+                    <input type="text" id="item_code" placeholder="e.g., A3 - Doritos">
+                </div>
+
+                <div id="contact_field">
+                    <label for="contact" id="contact_label">Phone or Email (For Refund / Updates)</label>
+                    <input type="text" id="contact" placeholder="Venmo/Zelle phone or email">
+                </div>
+
+                <label for="details">Details</label>
+                <textarea id="details" rows="3" placeholder="Tell us what happened..." required></textarea>
+
+                <button type="submit">Submit Request</button>
+            </form>
+
+            <div id="successBox" class="success-box">
+                <strong>Request Received!</strong><br>
+                Ticket #<span id="ticketId"></span> has been logged.<br>
+                Status: <b>RECEIVED</b>
+            </div>
+        </div>
+
+        <script>
+            function toggleFields() {{
+                const type = document.getElementById('request_type').value;
+                const itemLabel = document.getElementById('item_label');
+                const contactLabel = document.getElementById('contact_label');
+                
+                if (type === 'stuck_item_refund') {{
+                    itemLabel.innerText = "Slot Number or Stuck Item *";
+                    contactLabel.innerText = "Phone or Email for Refund *";
+                }} else if (type === 'product_request') {{
+                    itemLabel.innerText = "Desired Product Name *";
+                    contactLabel.innerText = "Email/Phone (Optional - to notify when stocked)";
+                }} else {{
+                    itemLabel.innerText = "Item Name (Optional)";
+                    contactLabel.innerText = "Email/Phone (Optional)";
+                }}
+            }}
+
+            document.getElementById('supportForm').addEventListener('submit', async (e) => {{
+                e.preventDefault();
+                const payload = {{
+                    machine_id: document.getElementById('machine_id').value,
+                    request_type: document.getElementById('request_type').value,
+                    item_code_or_name: document.getElementById('item_code').value || null,
+                    customer_contact: document.getElementById('contact').value || null,
+                    details: document.getElementById('details').value
+                }};
+
+                const res = await fetch('/tickets/', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify(payload)
+                }});
+
+                if (res.ok) {{
+                    const data = await res.json();
+                    document.getElementById('supportForm').classList.add('hidden');
+                    document.getElementById('ticketId').innerText = data.id;
+                    document.getElementById('successBox').style.display = 'block';
+                }} else {{
+                    alert("Error submitting request. Please try again.");
+                }}
+            }});
+        </script>
+    </body>
+    </html>
+    """
+
+# --- FRONTEND 2: OPERATOR DASHBOARD ---
+@app.get("/operator", response_class=HTMLResponse)
+def operator_dashboard():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Operator Ticket Dashboard</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+            .container { max-width: 900px; margin: 0 auto; }
+            h1 { color: #1c1e21; }
+            .card { background: white; padding: 18px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+            .badge { padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+            .received { background: #fff3cd; color: #856404; }
+            .in_progress { background: #cce5ff; color: #004085; }
+            .closed { background: #d4edda; color: #155724; }
+            .actions { display: flex; gap: 8px; align-items: center; }
+            input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+            button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+            .btn-close { background: #28a745; color: white; }
+            .btn-prog { background: #007bff; color: white; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Operator Service Dashboard</h1>
+            <div id="ticketsList">Loading tickets...</div>
+        </div>
+
+        <script>
+            async function loadTickets() {
+                const res = await fetch('/tickets/');
+                const tickets = await res.json();
+                const container = document.getElementById('ticketsList');
+                container.innerHTML = '';
+
+                tickets.forEach(t => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div>
+                            <strong>#${t.id} | Machine: ${t.machine_id}</strong> 
