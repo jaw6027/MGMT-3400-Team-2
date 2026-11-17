@@ -1,0 +1,131 @@
+Your **Python QR service portal** is running in this environment on port **3003**.
+
+To set it up:
+
+1. Open **Operator queue** and register each machine’s ID and location.
+2. Open **QR portal setup**.
+3. Download or print each machine’s QR label.
+4. Scan it with a phone—the request form selects that machine.
+5. Submit feedback, product requests, stuck-item reports, or refund requests.
+6. Operators review requests, update statuses, record the outcome, and close them.
+
+For real customers, configure a stable HTTPS website using `VENDING_PUBLIC_URL` and enable operator sign-in with `VENDING_OPERATOR_PASSWORD`.
+
+pip install flask qrcode[pil]
+
+import csv
+from datetime import datetime
+from flask import Flask, render_template_string, request
+
+app = Flask(__name__)
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vending Machine Support</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 450px; margin: 20px auto; padding: 15px; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        select, input, textarea, button { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
+        button { background-color: #0056b3; color: white; border: none; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        .badge { background: #eee; padding: 5px 10px; border-radius: 4px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <h2>Machine Service & Refund Request</h2>
+    <p>Machine ID: <span class="badge"><strong>{{ machine_id }}</strong></span></p>
+
+    {% if submitted %}
+        <p style="color: green;"><strong>Thank you!</strong> Your request has been logged. Our team will review it shortly.</p>
+    {% else %}
+        <form method="POST">
+            <input type="hidden" name="machine_id" value="{{ machine_id }}">
+            
+            <label for="issue_type">What happened?</label>
+            <select name="issue_type" id="issue_type" required>
+                <option value="Item Stuck">Item didn't drop / got stuck</option>
+                <option value="Card Reader">Card reader / tap-to-pay failed</option>
+                <option value="Out of Stock">Item is out of stock</option>
+                <option value="Product Request">Request a new snack/drink</option>
+                <option value="Other">Other machine issue</option>
+            </select>
+
+            <label for="slot">Coil / Selection Number (Optional)</label>
+            <input type="text" name="slot" id="slot" placeholder="e.g., B4">
+
+            <label for="contact">Email or Phone (Required for refunds)</label>
+            <input type="text" name="contact" id="contact" placeholder="you@example.com or 555-0199">
+
+            <label for="notes">Additional Details</label>
+            <textarea name="notes" id="notes" rows="3" placeholder="Tell us what happened..."></textarea>
+
+            <button type="submit">Submit Request</button>
+        </form>
+    {% endif %}
+</body>
+</html>
+"""
+
+@app.route("/report", methods=["GET", "POST"])
+def report():
+    machine_id = request.args.get("machine_id", "UNKNOWN")
+    
+    if request.method == "POST":
+        machine_id = request.form.get("machine_id")
+        issue_type = request.form.get("issue_type")
+        slot = request.form.get("slot")
+        contact = request.form.get("contact")
+        notes = request.form.get("notes")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Save ticket to a local CSV file
+        with open("service_tickets.csv", mode="a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow([timestamp, machine_id, issue_type, slot, contact, notes])
+
+        return render_template_string(HTML_TEMPLATE, machine_id=machine_id, submitted=True)
+
+    return render_template_string(HTML_TEMPLATE, machine_id=machine_id, submitted=False)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
+import os
+import qrcode
+
+# Replace with your live domain once hosted
+BASE_URL = "https://your-vending-portal.com"
+
+# List of your vending machine IDs and locations
+machines = [
+    "VM-101-GYM",
+    "VM-102-OFFICE",
+    "VM-103-LOBBY",
+]
+
+output_folder = "machine_qr_codes"
+os.makedirs(output_folder, exist_ok=True)
+
+for machine_id in machines:
+    full_url = f"{BASE_URL}{machine_id}"
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(full_url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    file_path = os.path.join(output_folder, f"{machine_id}.png")
+    img.save(file_path)
+    print(f"Generated QR code for {machine_id} -> {full_url}")
+
+
+[Read the setup guide](/workspace/MGMT-3400-Team-2/QR_PORTAL_SETUP.md).
+
+All 15 Python tests and the browser workflow passed. Changes are saved locally; the portal has not been publicly deployed.
