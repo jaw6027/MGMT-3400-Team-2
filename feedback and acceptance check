@@ -1,0 +1,21 @@
+Implemented and verified in the Python portal:
+
+- Product requests, stuck-item reports, and refund reports require a registered **Machine ID**.
+- Every submission immediately gets a request number and **Received** status.
+- Operators can update statuses and record actions.
+- A **Close request** button appears after resolution.
+- Closed requests remain in the machine’s service history.
+
+All **16 Python tests** and the browser workflow passed. Saved locally; nothing published.
+
+Suggested project feedback:
+
+Keep the customer service feature focused on the minimum scope: customers submit **product requests, stuck-item reports, and refund requests** linked to a valid **Machine ID**. Collect a short description, product name, and payment amount when applicable.
+
+Acceptance criteria:
+
+- Each submission receives a unique request number and **Received** status immediately.
+- Operators can view requests by machine ID and update their status.
+- Operators can record the action taken and close a resolved request.
+- Closed requests remain available in the machine’s service history.
+- Requests with a missing or invalid machine ID are rejected.
