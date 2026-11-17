@@ -7,11 +7,15 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "node --use-env-proxy server/index.js",
+    "dev": "PORT=${PORT:-3001} node --use-env-proxy server/index.js",
     "build": "vite build",
-    "start": "NODE_ENV=production node --use-env-proxy server/index.js",
-    "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/browser.mjs"
+    "start": "node --use-env-proxy server.js",
+    "test": "node --test test/*.test.js tests/*.test.js",
+    "test:browser": "node tests/browser.mjs",
+    "start:vendwell": "NODE_ENV=production PORT=${PORT:-3001} node --use-env-proxy server/index.js",
+    "start:scout": "PORT=${PORT:-3002} node --use-env-proxy server.js",
+    "start:inventory": "python3 app.py --port 3000",
+    "test:inventory": "python3 -m unittest discover -s tests -v"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",
