@@ -1,0 +1,8 @@
+{
+  "name": "team-2-vending-scout",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": { "start": "node --use-env-proxy server.js", "test": "node --test" }
+}
